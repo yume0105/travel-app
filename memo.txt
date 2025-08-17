@@ -1,0 +1,9 @@
+postgre起動の仕方
+・travel-appへ移動
+・Docker起動
+docker compose up -d
+・起動確認
+docker ps
+・postgreSQl起動
+psql -h localhost -U postgres -d travel_db
+passwordはpostgres
