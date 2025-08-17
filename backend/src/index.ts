@@ -17,7 +17,7 @@ const client = new Client({
   host: 'localhost',
   port: 5432,
   user: 'postgres',
-  password: 'password',
+  password: 'postgres',
   database: 'travel_db'
 })
 await client.connect()
