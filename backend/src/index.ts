@@ -36,6 +36,65 @@ app.get('/plan_invites', async (c) => {
   const result = await client.query('SELECT * FROM plan_invites')
   return c.json(result.rows)
 })
+
+app.get('/users/:id/plans', async (c) => {
+  const userId = c.req.param('id')
+  const res = await client.query(
+    `SELECT p.*
+     FROM plans p
+     JOIN plan_participants pp ON p.id = pp.plan_id
+     WHERE pp.user_id = $1
+     ORDER BY p.id DESC`,
+    [userId]
+  )
+  return c.json(res.rows)
+})
+
+app.get('/plans/:id', async (c) => {
+  const planId = c.req.param('id')
+  const res = await client.query('SELECT * FROM plans WHERE id = $1', [planId])
+  if (res.rows.length === 0) {
+    return c.notFound()
+  }
+  return c.json(res.rows[0])
+})
+
+app.put('/users/:id', async (c) => {
+  const id = c.req.param('id')
+  const {
+    name,
+    email,
+    crowd_tolerance,
+    interests,
+    food_conditions,
+    travel_pace,
+    language
+  } = await c.req.json()
+
+  await client.query(
+    `UPDATE users SET
+      name = $1,
+      email = $2,
+      crowd_tolerance = $3,
+      interests = $4,
+      food_conditions = $5,
+      travel_pace = $6,
+      language = $7
+     WHERE id = $8`,
+    [
+      name,
+      email,
+      crowd_tolerance,
+      interests,
+      food_conditions,
+      travel_pace,
+      language,
+      id
+    ]
+  )
+  const res = await client.query('SELECT * FROM users WHERE id = $1', [id])
+  return c.json(res.rows[0])
+})
 // user追加
 //app.post('/users', async (c) => {
 //  try {
@@ -60,7 +119,7 @@ app.get('/plan_invites', async (c) => {
 //  const { name, email, password } = await c.req.json()
 //  const hash = await bcrypt.hash(password, 10)
 //  await client.query(
-//    'INSERT INTO users01 (name, email, password_hash) VALUES ($1, $2, $3)',
+//    'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
 //    [name, email, hash]
 //  )
 //  return c.json({ message: 'User created' })
@@ -73,7 +132,7 @@ app.get('/plan_invites', async (c) => {
 //   }
 //   const hash = await bcrypt.hash(password, 10)
 //   await client.query(
-//     'INSERT INTO users01 (name, email, password_hash) VALUES ($1, $2, $3)',
+//     'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
 //     [name, email || null, hash]
 //   )
 //   return c.json({ message: 'User created' })
@@ -96,7 +155,7 @@ app.post('/signup', async (c) => {
 // ログイン
 //app.post('/login', async (c) => {
 //  const { email, password } = await c.req.json()
-//  const res = await client.query('SELECT * FROM users01 WHERE email=$1', [email])
+//  const res = await client.query('SELECT * FROM users WHERE email=$1', [email])
 //  if (res.rowCount === 0) return c.json({ error: 'User not found' }, 401)
 //  const user = res.rows[0]
 //  const match = await bcrypt.compare(password, user.password_hash)
@@ -108,7 +167,7 @@ app.post('/signup', async (c) => {
 
 //app.post('/login', async (c) => {
 //  const { email, password } = await c.req.json()
-//  const res = await client.query('SELECT * FROM users01 WHERE email=$1', [email])
+//  const res = await client.query('SELECT * FROM users WHERE email=$1', [email])
 //  if (res.rowCount === 0) {
 //    return c.json({ error: 'User not found', email }, 401)
 //  }
@@ -161,11 +220,46 @@ app.post('/reset-password', async (c) => {
 // })
 
 app.post('/plans', async (c) => {
-  const { organizer_id, title, start_date, end_date } = await c.req.json()
+  const {
+    organizer_id,
+    title,
+    destination,
+    departure,
+    arrival,
+    departure_date,
+    departure_time,
+    arrival_date,
+    arrival_time,
+    transport,
+    daily_budget,
+    total_budget
+  } = await c.req.json()
+
   // プラン作成
   const res = await client.query(
-    'INSERT INTO plans (organizer_id, title, start_date, end_date) VALUES ($1, $2, $3, $4) RETURNING *',
-    [organizer_id, title, start_date, end_date]
+    `INSERT INTO plans (
+      organizer_id, title, destination, departure, arrival,
+      departure_date, departure_time, arrival_date, arrival_time,
+      transport, daily_budget, total_budget, status
+    ) VALUES (
+      $1, $2, $3, $4, $5,
+      $6, $7, $8, $9,
+      $10, $11, $12, 'confirmed'
+    ) RETURNING *`,
+    [
+      organizer_id,
+      title,
+      destination,
+      departure,
+      arrival,
+      departure_date,
+      departure_time,
+      arrival_date,
+      arrival_time,
+      transport,
+      daily_budget,
+      total_budget
+    ]
   )
   const plan = res.rows[0]
   // 幹事をplan_participantsに追加
@@ -274,7 +368,7 @@ app.get('/plans/:id/participants', async (c) => {
   const res = await client.query(
     `SELECT u.id, u.name
      FROM plan_participants pp
-     JOIN users01 u ON pp.user_id = u.id
+     JOIN users u ON pp.user_id = u.id
      WHERE pp.plan_id = $1`,
     [plan_id]
   )
@@ -288,7 +382,7 @@ app.get('/invite-info', async (c) => {
     `SELECT p.title AS plan_title, u.name AS organizer_name
      FROM plan_invites i
      JOIN plans p ON i.plan_id = p.id
-     JOIN users01 u ON p.organizer_id = u.id
+     JOIN users u ON p.organizer_id = u.id
      WHERE i.token = $1 AND i.used = FALSE`,
     [token]
   )
