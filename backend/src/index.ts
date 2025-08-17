@@ -27,11 +27,6 @@ app.get('/users', async (c) => {
   return c.json(result.rows)
 })
 
-app.get('/users01', async (c) => {
-  const result = await client.query('SELECT * FROM users01')
-  return c.json(result.rows)
-})
-
 app.get('/plan_participants', async (c) => {
   const result = await client.query('SELECT * FROM plan_participants')
   return c.json(result.rows)
@@ -91,7 +86,7 @@ app.post('/signup', async (c) => {
   }
   const hash = await bcrypt.hash(password, 10)
   await client.query(
-    `INSERT INTO users01 (name, email, password_hash, crowd_tolerance, interests, food_conditions, travel_pace, language)
+    `INSERT INTO users (name, email, password_hash, crowd_tolerance, interests, food_conditions, travel_pace, language)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
     [name, email || null, hash, crowd_tolerance, interests, food_conditions, travel_pace, language]
   )
@@ -128,7 +123,7 @@ app.post('/signup', async (c) => {
 
 app.post('/login', async (c) => {
   const { name, password } = await c.req.json()
-  const res = await client.query('SELECT * FROM users01 WHERE name=$1', [name])
+  const res = await client.query('SELECT * FROM users WHERE name=$1', [name])
   if (res.rowCount === 0) {
     return c.json({ error: 'User not found', name }, 401)
   }
@@ -146,12 +141,12 @@ app.post('/login', async (c) => {
 // パスワードリセット申請（仮実装）
 app.post('/reset-password', async (c) => {
   const { email, newPassword } = await c.req.json()
-  const res = await client.query('SELECT * FROM users01 WHERE email=$1', [email])
+  const res = await client.query('SELECT * FROM users WHERE email=$1', [email])
   if (res.rowCount === 0) {
     return c.json({ error: 'Email not found' }, 404)
   }
   const hash = await bcrypt.hash(newPassword, 10)
-  await client.query('UPDATE users01 SET password_hash=$1 WHERE email=$2', [hash, email])
+  await client.query('UPDATE users SET password_hash=$1 WHERE email=$2', [hash, email])
   return c.json({ message: 'Password reset successful' })
 })
 
