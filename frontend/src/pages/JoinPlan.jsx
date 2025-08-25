@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Login from './Login'
 import Signup from './Signup'
-const API_BASE_URL = import.meta.env.REACT_APP_API_URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 function JoinPlan({ user, onLogin }) {
   const location = useLocation()
   const navigate = useNavigate()
