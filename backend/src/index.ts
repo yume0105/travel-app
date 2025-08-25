@@ -16,12 +16,20 @@ app.use('*', cors({
 }))
 
 // PostgreSQL クライアント
+// const client = new Client({
+//   host: 'localhost',
+//   port: 5432,
+//   user: 'postgres',
+//   password: 'postgres',
+//   database: 'travel_db'
+// })
+// await client.connect()
+
 const client = new Client({
-  host: 'localhost',
-  port: 5432,
-  user: 'postgres',
-  password: 'postgres',
-  database: 'travel_db'
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // Render PostgreSQLはSSL必須
+  },
 })
 await client.connect()
 
