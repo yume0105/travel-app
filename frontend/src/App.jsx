@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Login from './pages/Login'
+import Index from './pages/Index'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import ProfileEdit from './pages/ProfileEdit'
@@ -68,17 +69,19 @@ function App() {
     <BrowserRouter>
       <Header user={user} onLogin={handleLogin} onLogout={handleLogout} />
 
-      <Routes>
-        <Route path="/" element={<Dashboard user={user} />} />
-        <Route path="/login" element={<Login onLogin={handleLogin} />} />
-        <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
-        <Route path="/dashboard" element={<Dashboard user={user} />} />
-        <Route path="/profile/edit" element={<ProfileEdit user={user} setUser={setUser} />} />
-        <Route path="/plan/new" element={<CreatePlan user={user} onSave={handleCreatePlan} />} />
-        <Route path="/plan/:id" element={<PlanDetail user={user} />} />
-        <Route path="/plan/:id/edit" element={<CreatePlan user={user} onSave={handleEditPlan} />} />
-        <Route path="/join" element={<JoinPlan user={user} onLogin={handleLogin} />} />
-      </Routes>
+      <div className="app-main-container">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
+          <Route path="/dashboard" element={<Dashboard user={user} />} />
+          <Route path="/profile/edit" element={<ProfileEdit user={user} setUser={setUser} />} />
+          <Route path="/plan/new" element={<CreatePlan user={user} onSave={handleCreatePlan} />} />
+          <Route path="/plan/:id" element={<PlanDetail user={user} />} />
+          <Route path="/plan/:id/edit" element={<CreatePlan user={user} onSave={handleEditPlan} />} />
+          <Route path="/join" element={<JoinPlan user={user} onLogin={handleLogin} />} />
+        </Routes>
+      </div>
 
       <Footer /> 
     </BrowserRouter>

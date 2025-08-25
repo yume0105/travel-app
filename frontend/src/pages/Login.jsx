@@ -20,7 +20,7 @@ function Login({ onLogin }) {
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>ログイン</h2>
+      {/* <h3>ログイン</h3> */}
       <input placeholder="ユーザー名" value={name} onChange={e => setName(e.target.value)} />
       <input placeholder="パスワード" type="password" value={password} onChange={e => setPassword(e.target.value)} />
       <button onClick={handleLoginClick}>ログイン</button>
