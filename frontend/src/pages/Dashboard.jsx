@@ -37,6 +37,7 @@ function Dashboard({ user }) {
     if (user?.id) {
       axios.get(`${API_BASE_URL}/users/${user.id}/plans`)
         .then(res => setPlans(res.data))
+        .catch(err => console.error('API fetch error:', err))
     }
   }, [user])
   
