@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const API_DATABASE_URL = import.meta.env.DATABASE_URL
 
 function PlanDetail({ user }) {
   const { id } = useParams()
@@ -14,22 +16,22 @@ function PlanDetail({ user }) {
   const navigate = useNavigate()
 
   useEffect(() => {
-    axios.get(`http://localhost:3000/plans/${id}`)
+    axios.get(`${API_BASE_URL}/plans/${id}`)
       .then(res => setPlan(res.data))
       .catch(err => {
         console.error(err)
         navigate('/404')
       })
-    axios.get(`http://localhost:3000/plans/${id}/participants`)
+    axios.get(`${API_BASE_URL}/plans/${id}/participants`)
       .then(res => setParticipants(res.data))
     // AI提案履歴を取得
-    axios.get(`http://localhost:3000/ai/plan-results?plan_id=${id}`)
+    axios.get(`${API_BASE_URL}/ai/plan-results?plan_id=${id}`)
       .then(res => setAiHistory(res.data))
   }, [id, navigate])
 
   const handleGenerateInvite = async () => {
-    const res = await axios.post(`http://localhost:3000/plans/${id}/invite`)
-    setInviteLink(`http://localhost:5173/join?token=${res.data.token}`)
+    const res = await axios.post(`${API_BASE_URL}/plans/${id}/invite`)
+    setInviteLink(`${API_DATABASE_URL}/join?token=${res.data.token}`)
   }
 
   // AIプラン生成＆DB保存
@@ -42,10 +44,10 @@ function PlanDetail({ user }) {
     setAiLoading(true)
     try {
       // 参加者の詳細情報を取得
-      const usersRes = await axios.get('http://localhost:3000/users')
+      const usersRes = await axios.get(`${API_BASE_URL}/users`)
       const participantInfos = usersRes.data.filter(u => participants.some(p => p.id === u.id))
       // Gemini APIへリクエスト（user.idも渡す）
-      const res = await axios.post('http://localhost:3000/ai/generate-plan', {
+      const res = await axios.post(`${API_BASE_URL}/ai/generate-plan`, {
         participants: participantInfos,
         plan,
         user_id: user.id

@@ -12,6 +12,8 @@ import Footer from "./components/Footer";
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 function App() {
   const [user, setUser] = useState(null)
   // 編集対象プランのstate
@@ -25,7 +27,7 @@ function App() {
   // プラン作成処理
   const handleCreatePlan = async (planData) => {
     try {
-      await axios.post('http://localhost:3000/plans', {
+      await axios.post(`${API_BASE_URL}/plans`, {
         organizer_id: user.id,
         title: planData.title,
         destination: planData.destination,
@@ -48,7 +50,7 @@ function App() {
 
   const handleEditPlan = async (planData) => {
     try {
-      await axios.put(`http://localhost:3000/plans/${planData.id}`, planData)
+      await axios.put(`${API_BASE_URL}/plans/${planData.id}`, planData)
       // 編集後の処理（例: ダッシュボードに遷移など）
       alert('プラン編集完了！')
     } catch (err) {

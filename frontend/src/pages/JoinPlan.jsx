@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Login from './Login'
 import Signup from './Signup'
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 function JoinPlan({ user, onLogin }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -24,7 +24,7 @@ function JoinPlan({ user, onLogin }) {
       setLoading(false)
       return
     }
-    axios.get(`http://localhost:3000/invite-info?token=${token}`)
+    axios.get(`${API_BASE_URL}/invite-info?token=${token}`)
       .then(res => {
         setInviteInfo(res.data)
         setLoading(false)
@@ -41,7 +41,7 @@ function JoinPlan({ user, onLogin }) {
       return
     }
     try {
-      await axios.post('http://localhost:3000/plans/join', {
+      await axios.post(`${API_BASE_URL}/plans/join`, {
         token,
         user_id: user.id
       })

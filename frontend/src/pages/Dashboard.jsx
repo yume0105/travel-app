@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 function Dashboard({ user }) {
   if (!user) {
     return <div>ユーザー情報を取得中...</div>;
@@ -33,7 +35,7 @@ function Dashboard({ user }) {
 
   useEffect(() => {
     if (user?.id) {
-      axios.get(`http://localhost:3000/users/${user.id}/plans`)
+      axios.get(`${API_BASE_URL}/users/${user.id}/plans`)
         .then(res => setPlans(res.data))
     }
   }, [user])

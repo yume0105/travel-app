@@ -1,6 +1,4 @@
 // index
-import React from 'react'
-
 function Index() {
   return (
     <div style={{ padding: 40, maxWidth: 700, margin: '0 auto' }}>

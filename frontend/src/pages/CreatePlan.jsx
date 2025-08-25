@@ -1,6 +1,5 @@
 // プラン作成フォーム
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 function CreatePlan({ user, onSave }) {

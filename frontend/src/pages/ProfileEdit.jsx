@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 function ProfileEdit({ user, setUser }) {
     const navigate = useNavigate()
     const [name, setName] = useState(user.name || '')
@@ -27,7 +27,7 @@ function ProfileEdit({ user, setUser }) {
 
     const handleSaveProfile = async () => {
         try {
-            const res = await axios.put(`http://localhost:3000/users/${user.id}`, {
+            const res = await axios.put(`${API_BASE_URL}/users/${user.id}`, {
                 name, email, crowd_tolerance: crowdTolerance,
                 interests, food_conditions: foodConditions,
                 travel_pace: travelPace, language
