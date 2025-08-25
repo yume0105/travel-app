@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { cors } from 'hono/cors'
 import { Client } from 'pg'
-import bcrypt from 'bcrypt'
+// import bcrypt from 'bcrypt'
+import * as bcrypt from 'bcrypt'
 import { v4 as uuidv4 } from 'uuid'
 import 'dotenv/config'
 import { GoogleGenerativeAI } from "@google/generative-ai"
@@ -475,11 +476,12 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 app.post('/ai/generate-plan', async (c) => {
   const { participants, plan, user_id } = await c.req.json()
+  // 型を明示
+  const typedParticipants: { name: string; age?: number; interests?: string; food_conditions?: string; travel_pace?: string; language?: string }[] = participants
 
-  // 参加者情報とプラン詳細をプロンプトに整形
   const prompt = `
 参加者情報:
-${participants.map(p => `名前: ${p.name}, 年齢: ${p.age || "不明"}, 興味: ${p.interests || "不明"}, 食事条件: ${p.food_conditions || "不明"}, 旅行ペース: ${p.travel_pace || "不明"}, 言語: ${p.language || "不明"}`).join('\n')}
+${typedParticipants.map(p => `名前: ${p.name}, 年齢: ${p.age || "不明"}, 興味: ${p.interests || "不明"}, 食事条件: ${p.food_conditions || "不明"}, 旅行ペース: ${p.travel_pace || "不明"}, 言語: ${p.language || "不明"}`).join('\n')}
 
 プラン詳細:
 プラン名: ${plan.title}
