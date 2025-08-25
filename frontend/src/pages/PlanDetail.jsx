@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-const API_DATABASE_URL = import.meta.env.DATABASE_URL
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 
 function PlanDetail({ user }) {
   const { id } = useParams()
@@ -31,7 +31,7 @@ function PlanDetail({ user }) {
 
   const handleGenerateInvite = async () => {
     const res = await axios.post(`${API_BASE_URL}/plans/${id}/invite`)
-    setInviteLink(`${API_BASE_URL}/join?token=${res.data.token}`)
+    setInviteLink(`${frontendUrl}/join?token=${res.data.token}`)
   }
 
   // AIプラン生成＆DB保存
