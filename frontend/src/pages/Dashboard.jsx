@@ -27,11 +27,7 @@ function Dashboard({ user }) {
   const [editLanguage, setEditLanguage] = useState(language)
   const [creatingPlan, setCreatingPlan] = useState(false)
   const [planName, setPlanName] = useState('')
-
-  // プラン作成ボタン → フォームへ遷移
-  const handleStartCreatePlan = () => {
-    navigate('/plan/new', { state: { initialPlan: { title } } })
-  }
+  const [titleError, setTitleError] = useState('')
 
   useEffect(() => {
     if (user?.id) {
@@ -41,6 +37,26 @@ function Dashboard({ user }) {
     }
   }, [user])
   
+    // プラン名入力時に重複チェック
+  useEffect(() => {
+    if (!title) {
+      setTitleError('')
+      return
+    }
+    const exists = plans.some(plan => plan.title === title)
+    if (exists) {
+      setTitleError('すでに作成されたことのあるプラン名です')
+    } else {
+      setTitleError('')
+    }
+  }, [title, plans])
+
+    // プラン作成ボタン → フォームへ遷移
+  const handleStartCreatePlan = () => {
+    if (titleError || !title) return
+    navigate('/plan/new', { state: { initialPlan: { title } } })
+  }
+
   return (
     <div style={{ padding: 20 }}>
       <h2>ダッシュボード ({user.name})</h2>
@@ -137,8 +153,22 @@ function Dashboard({ user }) {
       </button> */}
 
       <h3>プラン作成（幹事）</h3>
-      <input placeholder="プラン名" value={title} onChange={e => setTitle(e.target.value)} />
-      <button onClick={handleStartCreatePlan}>作成</button>
+      <input
+        placeholder="プラン名"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        style={titleError ? { borderColor: 'red' } : {}}
+      />
+      {titleError && (
+        <div style={{ color: 'red', marginTop: 4 }}>{titleError}</div>
+      )}
+      <button
+        onClick={handleStartCreatePlan}
+        disabled={!!titleError || !title}
+        style={{ marginTop: 8 }}
+      >
+        作成
+      </button>
 
       <h3>自分のプラン一覧</h3>
       <ul>

@@ -1,7 +1,5 @@
 // ヘッダー
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import Login from '../pages/Login'
 
 export default function Header({ user, onLogin, onLogout }) {
   const navigate = useNavigate();
