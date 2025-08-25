@@ -202,15 +202,18 @@ app.post('/login', async (c) => {
   const { name, password } = await c.req.json()
   const res = await client.query('SELECT * FROM users WHERE name=$1', [name])
   if (res.rowCount === 0) {
+    console.log('Login failed: User not found for name', name)
     return c.json({ error: 'User not found', name }, 401)
   }
   const user = res.rows[0]
   const match = await bcrypt.compare(password, user.password_hash)
   if (!match) {
+    console.log('Login failed: Incorrect password for name', name)
     return c.json({ error: 'Incorrect password', name }, 401)
   }
   const token = uuidv4()
   // すべての基本情報を返す
+  console.log('user:', user)
   return c.json({ token, user })
 })
 
