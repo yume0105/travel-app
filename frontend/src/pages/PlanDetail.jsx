@@ -31,7 +31,7 @@ function PlanDetail({ user }) {
 
   const handleGenerateInvite = async () => {
     const res = await axios.post(`${API_BASE_URL}/plans/${id}/invite`)
-    setInviteLink(`${API_DATABASE_URL}/join?token=${res.data.token}`)
+    setInviteLink(`${API_BASE_URL}/join?token=${res.data.token}`)
   }
 
   // AIプラン生成＆DB保存
