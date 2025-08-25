@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 
-function Signup(){
+function Signup({ onSignup }) {
     const navigate = useNavigate()
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
@@ -27,17 +27,20 @@ function Signup(){
     ]
 
     const handleSignup = async () => {
-        try{
+        try {
             const res = await axios.post('http://localhost:3000/signup', {
-            name, email, password,
-            crowd_tolerance: crowdTolerance,
-            interests,
-            food_conditions: foodConditions,
-            travel_pace: travelPace,
-            language
+                name,
+                email,
+                password,
+                crowd_tolerance: crowdTolerance,
+                interests,
+                food_conditions: foodConditions,
+                travel_pace: travelPace,
+                language
             })
-            navigate('/login')
-            alert('ユーザー作成完了！ログインしてください')
+            const userData = res.data.user
+            onSignup(userData)
+            navigate('/dashboard')
         } catch (error) {
             console.error('Signup error:', error)
             alert('ユーザー作成に失敗しました')

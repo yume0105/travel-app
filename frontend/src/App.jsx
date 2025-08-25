@@ -6,6 +6,8 @@ import ProfileEdit from './pages/ProfileEdit'
 import CreatePlan from './pages/CreatePlan'
 import PlanDetail from './pages/PlanDetail'
 import JoinPlan from './pages/JoinPlan'
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
@@ -53,19 +55,32 @@ function App() {
     }
   }
 
+  // 新規登録後に呼ばれる
+  const handleSignup = (userData) => {
+    setUser(userData)
+  }
+
+  const handleLogout = () => {
+    setUser(null);
+  };
+
   return (
     <BrowserRouter>
+      <Header user={user} onLogin={handleLogin} onLogout={handleLogout} />
+
       <Routes>
-        <Route path="/" element={<Login onLogin={handleLogin} />} />
+        <Route path="/" element={<Dashboard user={user} />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
         <Route path="/dashboard" element={<Dashboard user={user} />} />
         <Route path="/profile/edit" element={<ProfileEdit user={user} setUser={setUser} />} />
         <Route path="/plan/new" element={<CreatePlan user={user} onSave={handleCreatePlan} />} />
-        <Route path="/plan/:id" element={<PlanDetail />} />
+        <Route path="/plan/:id" element={<PlanDetail user={user} />} />
         <Route path="/plan/:id/edit" element={<CreatePlan user={user} onSave={handleEditPlan} />} />
         <Route path="/join" element={<JoinPlan user={user} onLogin={handleLogin} />} />
       </Routes>
+
+      <Footer /> 
     </BrowserRouter>
   )
 }

@@ -3,32 +3,59 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 
-function PlanDetail() {
-  const { id } = useParams() // URLからプランID取得
+function PlanDetail({ user }) {
+  const { id } = useParams()
   const [plan, setPlan] = useState(null)
   const [participants, setParticipants] = useState([])
   const [inviteLink, setInviteLink] = useState('')
+  const [aiPlan, setAiPlan] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiHistory, setAiHistory] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
-    // プラン詳細取得
     axios.get(`http://localhost:3000/plans/${id}`)
       .then(res => setPlan(res.data))
       .catch(err => {
         console.error(err)
         navigate('/404')
       })
-    // 参加者取得
     axios.get(`http://localhost:3000/plans/${id}/participants`)
       .then(res => setParticipants(res.data))
+    // AI提案履歴を取得
+    axios.get(`http://localhost:3000/ai/plan-results?plan_id=${id}`)
+      .then(res => setAiHistory(res.data))
   }, [id, navigate])
 
-  // 日付・時刻フォーマット関数は省略（既存のものを利用）
-
-  // 招待リンク生成
   const handleGenerateInvite = async () => {
     const res = await axios.post(`http://localhost:3000/plans/${id}/invite`)
-    setInviteLink(`http://localhost:5174/join?token=${res.data.token}`)
+    setInviteLink(`http://localhost:5173/join?token=${res.data.token}`)
+  }
+
+  // AIプラン生成＆DB保存
+  const handleAiPlan = async () => {
+    if (!user || !user.id) {
+      alert('AIプラン生成にはログインが必要です')
+      setAiLoading(false)
+      return
+    }
+    setAiLoading(true)
+    try {
+      // 参加者の詳細情報を取得
+      const usersRes = await axios.get('http://localhost:3000/users')
+      const participantInfos = usersRes.data.filter(u => participants.some(p => p.id === u.id))
+      // Gemini APIへリクエスト（user.idも渡す）
+      const res = await axios.post('http://localhost:3000/ai/generate-plan', {
+        participants: participantInfos,
+        plan,
+        user_id: user.id
+      })
+      setAiPlan(res.data)
+    } catch (err) {
+      console.log(err)
+      alert('AIプラン生成に失敗しました')
+    }
+    setAiLoading(false)
   }
 
   if (!plan) return <div>読み込み中...</div>
@@ -68,6 +95,32 @@ function PlanDetail() {
         Edit Plan
       </Link>
       <button onClick={() => window.history.back()}>ダッシュボードに戻る</button>
+      <hr />
+      <button onClick={handleAiPlan} disabled={aiLoading}>
+        {aiLoading ? 'AIプラン生成中...' : 'AIにプラン生成を依頼'}
+      </button>
+      {aiPlan && (
+        <div style={{ marginTop: 20, background: '#f9f9f9', padding: 10, borderRadius: 8 }}>
+          <h3>Geminiによる旅行プラン提案</h3>
+          <div style={{ whiteSpace: 'pre-wrap', fontSize: '1.1em', lineHeight: '1.7' }}>
+            {aiPlan.aiPlan}
+          </div>
+        </div>
+      )}
+      {/* AI提案履歴表示 */}
+      <hr />
+      <h3>過去のAIプラン提案</h3>
+      {aiHistory.length === 0 && <div>まだAI提案はありません。</div>}
+      {aiHistory.map((item, idx) => (
+        <div key={item.id} style={{ margin: '16px 0', background: '#f4f4f4', padding: 8, borderRadius: 6 }}>
+          <div style={{ fontSize: 12, color: '#888' }}>
+            提案者: ユーザーID {item.user_id} / {new Date(item.created_at).toLocaleString()}
+          </div>
+          <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
+            {item.gemini_result}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -83,9 +136,7 @@ function formatDate(dateStr) {
 
 function formatTime(timeStr) {
   if (!timeStr) return ''
-  // すでにhh:mm形式ならそのまま
   if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr
-  // ISO文字列の場合
   const d = new Date(`1970-01-01T${timeStr}`)
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')

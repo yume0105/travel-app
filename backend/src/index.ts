@@ -4,6 +4,8 @@ import { cors } from 'hono/cors'
 import { Client } from 'pg'
 import bcrypt from 'bcrypt'
 import { v4 as uuidv4 } from 'uuid'
+import 'dotenv/config'
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const app = new Hono()
 
@@ -144,12 +146,13 @@ app.post('/signup', async (c) => {
     return c.json({ error: 'Name and password are required' }, 400)
   }
   const hash = await bcrypt.hash(password, 10)
-  await client.query(
+  const result = await client.query(
     `INSERT INTO users (name, email, password_hash, crowd_tolerance, interests, food_conditions, travel_pace, language)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
     [name, email || null, hash, crowd_tolerance, interests, food_conditions, travel_pace, language]
   )
-  return c.json({ message: 'User created' })
+  const user = result.rows[0]
+  return c.json({ user })
 })
 
 // ログイン
@@ -335,12 +338,26 @@ app.post('/plans/:id/invite', async (c) => {
 // 招待リンクで参加
 app.post('/plans/join', async (c) => {
   const { token, user_id } = await c.req.json()
-  const res = await client.query('SELECT * FROM plan_invites WHERE token=$1 AND used=FALSE', [token])
-  if (res.rowCount === 0) return c.json({ error: 'Invalid or used token' }, 400)
-  const plan_id = res.rows[0].plan_id
-  await client.query('INSERT INTO plan_participants (plan_id, user_id) VALUES ($1, $2)', [plan_id, user_id])
-  await client.query('UPDATE plan_invites SET used=TRUE WHERE token=$1', [token])
-  return c.json({ message: 'Joined plan', plan_id })
+  const plan_id = await getPlanIdFromToken(token)
+  if (!plan_id) {
+    return c.json({ error: '無効な招待トークンです' }, 400)
+  }
+
+  // すでに参加済みかチェック
+  const exists = await client.query(
+    'SELECT 1 FROM plan_participants WHERE plan_id = $1 AND user_id = $2',
+    [plan_id, user_id]
+  )
+  if (exists.rows.length > 0) {
+    return c.json({ error: 'すでに参加済みです' }, 400)
+  }
+
+  // 参加登録
+  await client.query(
+    'INSERT INTO plan_participants (plan_id, user_id) VALUES ($1, $2)',
+    [plan_id, user_id]
+  )
+  return c.json({ message: '参加しました' })
 })
 
 // プラン一覧取得
@@ -444,6 +461,78 @@ app.post('/plans/:id/edit', async (c) => {
   return c.json(res.rows[0])
 })
 
+// Gemini APIキーを環境変数から取得
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY is not defined in the environment variables.");
+}
+
+// APIキーを使ってGoogleGenerativeAIを初期化
+const genAI = new GoogleGenerativeAI(apiKey);
+
+// これでモデルを利用できます
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+app.post('/ai/generate-plan', async (c) => {
+  const { participants, plan, user_id } = await c.req.json()
+
+  // 参加者情報とプラン詳細をプロンプトに整形
+  const prompt = `
+参加者情報:
+${participants.map(p => `名前: ${p.name}, 年齢: ${p.age || "不明"}, 興味: ${p.interests || "不明"}, 食事条件: ${p.food_conditions || "不明"}, 旅行ペース: ${p.travel_pace || "不明"}, 言語: ${p.language || "不明"}`).join('\n')}
+
+プラン詳細:
+プラン名: ${plan.title}
+目的地: ${plan.destination}
+出発地: ${plan.departure}
+到着地: ${plan.arrival}
+出発日: ${plan.departure_date}
+出発時刻: ${plan.departure_time}
+到着日: ${plan.arrival_date}
+到着時刻: ${plan.arrival_time}
+移動手段: ${plan.transport}
+一日の予算: ${plan.daily_budget}
+総予算: ${plan.total_budget}
+
+この情報をもとに、参加者全員が楽しめる旅行プランを日本語で提案してください。
+`
+
+  try {
+    const result = await model.generateContent(prompt)
+    console.log("Gemini API result:", result)
+    const aiPlan = result.response.text()
+
+    // AI結果をDBに保存
+    await client.query(
+      `INSERT INTO ai_plan_results (plan_id, user_id, gemini_result)
+       VALUES ($1, $2, $3)`,
+      [plan.id, user_id, aiPlan]
+    )
+
+    return c.json({ aiPlan })
+  } catch (err) {
+    console.error("Gemini API error:", err)
+    return c.json({ error: "Gemini API呼び出しに失敗しました" }, 500)
+  }
+})
+
+// AI提案履歴取得API
+app.get('/ai/plan-results', async (c) => {
+  const plan_id = c.req.query('plan_id')
+  if (!plan_id) {
+    return c.json({ error: 'plan_id is required' }, 400)
+  }
+  const res = await client.query(
+    `SELECT id, plan_id, user_id, gemini_result, created_at
+     FROM ai_plan_results
+     WHERE plan_id = $1
+     ORDER BY created_at DESC`,
+    [plan_id]
+  )
+  // 存在しない場合も空配列を返す
+  return c.json(res.rows)
+})
+
 // Node.js 用サーバ起動
 serve({
   fetch: app.fetch,
@@ -451,4 +540,12 @@ serve({
 })
 
 console.log('🚀 Server running on http://localhost:3000')
+
+async function getPlanIdFromToken(token: string): Promise<number | null> {
+  const res = await client.query(
+    'SELECT plan_id FROM plan_invites WHERE token = $1',
+    [token]
+  )
+  return res.rows[0]?.plan_id ?? null
+}
 

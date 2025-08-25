@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Login from './Login'
+import Signup from './Signup'
 
 function JoinPlan({ user, onLogin }) {
   const location = useLocation()
@@ -11,6 +12,7 @@ function JoinPlan({ user, onLogin }) {
   const [error, setError] = useState('')
   const [joined, setJoined] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
+  const [showSignup, setShowSignup] = useState(false)
 
   // 招待トークン取得
   const params = new URLSearchParams(location.search)
@@ -50,10 +52,34 @@ function JoinPlan({ user, onLogin }) {
     }
   }
 
+  // // ログイン直後に自動参加
+  // useEffect(() => {
+  //   if (user && showLogin && !joined && !loading && !error) {
+  //     handleJoin()
+  //   }
+  //   // eslint-disable-next-line
+  // }, [user])
+
+  // // 新規登録完了時に自動参加
+  // useEffect(() => {
+  //   if (user && (showLogin || showSignup) && !joined && !loading && !error) {
+  //     handleJoin()
+  //   }
+  // }, [user])
+
+  // ログイン・新規登録直後に自動参加
+  useEffect(() => {
+    if (user && !joined && !loading && !error) {
+      handleJoin()
+    }
+    // eslint-disable-next-line
+  }, [user])
+
   if (loading) return <div>読み込み中...</div>
   if (error) return <div style={{ color: 'red' }}>{error}</div>
   if (joined) return <div>参加が完了しました！ダッシュボードに移動します...</div>
   if (showLogin) return <Login onLogin={onLogin} />
+  if (showSignup) return <Signup onSignup={onLogin} />
 
   return (
     <div style={{ padding: 20 }}>
@@ -63,6 +89,7 @@ function JoinPlan({ user, onLogin }) {
         <b>幹事:</b> {inviteInfo.organizer_name}
       </p>
       <button onClick={handleJoin}>このプランに参加する</button>
+      <button onClick={() => setShowSignup(true)}>新規登録して参加</button>
     </div>
   )
 }
