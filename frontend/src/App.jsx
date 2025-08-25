@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Index from './pages/Index'
 import Signup from './pages/Signup'
@@ -64,8 +64,8 @@ function App() {
   }
 
   const handleLogout = () => {
-    setUser(null);
-  };
+    setUser(null)
+  }
 
   return (
     <BrowserRouter>
@@ -73,7 +73,7 @@ function App() {
 
       <div className="app-main-container">
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Index onLogin={handleLogin}/>} />
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
           <Route path="/dashboard" element={<Dashboard user={user} />} />

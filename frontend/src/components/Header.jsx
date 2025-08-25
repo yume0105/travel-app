@@ -1,9 +1,16 @@
 // ヘッダー
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Login from '../pages/Login'
 
 export default function Header({ user, onLogin, onLogout }) {
+  const navigate = useNavigate();
+
+  const handleLogoutClick = () => {
+    onLogout();
+    navigate("/");
+  };
+
   return (
     <header style={{ padding: "10px", backgroundColor: "#f0f0f0" }}>
       <div style={{
@@ -18,17 +25,11 @@ export default function Header({ user, onLogin, onLogout }) {
               <Link to="/dashboard">ダッシュボード</Link>
               <Link to="/plan/new">プラン作成</Link>
               <Link to="/profile/edit">プロフィール編集</Link>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span>こんにちは、{user.name} さん</span>
+                <button onClick={handleLogoutClick}>ログアウト</button>
+              </div>
             </>
-          )}
-          {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span>こんにちは、{user.name} さん</span>
-              <button onClick={onLogout}>ログアウト</button>
-            </div>
-          ) : (
-            <div>
-              <Login onLogin={onLogin} />
-            </div>
           )}
         </nav>
       </div>

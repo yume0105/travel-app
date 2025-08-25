@@ -30,7 +30,7 @@ function Dashboard({ user }) {
 
   // プラン作成ボタン → フォームへ遷移
   const handleStartCreatePlan = () => {
-    navigate('/plan/new', { state: { title } })
+    navigate('/plan/new', { state: { initialPlan: { title } } })
   }
 
   useEffect(() => {

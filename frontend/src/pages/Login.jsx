@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 function Login({ onLogin }) {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
@@ -11,10 +12,16 @@ function Login({ onLogin }) {
   const handleLoginClick = async () => {
     try {
       const res = await axios.post(`${API_BASE_URL}/login`, { name, password })
-      onLogin(res.data.user) // App.jsxのsetUserなどを呼ぶ
+      onLogin(res.data.user)
       navigate('/dashboard')
     } catch (err) {
-      alert('ログイン失敗')
+      console.error('ログイン失敗:', err)
+      if (err.response) {
+        // サーバーからのエラーレスポンス内容を表示
+        alert(`ログイン失敗: ${err.response.data?.error || err.response.statusText}`)
+      } else {
+        alert('ログイン失敗: ネットワークエラー')
+      }
     }
   }
 
