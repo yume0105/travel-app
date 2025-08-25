@@ -552,13 +552,14 @@ app.get('/ai/plan-results', async (c) => {
   return c.json(res.rows)
 })
 
-// Node.js 用サーバ起動
+const PORT = process.env.PORT || 3000
+
 serve({
   fetch: app.fetch,
-  port: 3000,
+  port: Number(PORT),
 })
 
-console.log('🚀 Server running on http://localhost:3000')
+console.log(`🚀 Server running on http://localhost:${PORT}`)
 
 async function getPlanIdFromToken(token: string): Promise<number | null> {
   const res = await client.query(
