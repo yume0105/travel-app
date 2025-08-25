@@ -1,6 +1,6 @@
 postgre起動の仕方
 ・travel-appへ移動
-・Docker起動
+・Docker起動 or Docker Desktop上で起動
 docker compose up -d
 ・起動確認
 docker ps
