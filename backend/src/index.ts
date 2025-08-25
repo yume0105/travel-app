@@ -150,18 +150,24 @@ app.put('/users/:id', async (c) => {
 // })
 
 app.post('/signup', async (c) => {
-  const { name, email, password, crowd_tolerance, interests, food_conditions, travel_pace, language } = await c.req.json()
-  if (!name || !password) {
-    return c.json({ error: 'Name and password are required' }, 400)
+  try {
+    const { name, email, password, crowd_tolerance, interests, food_conditions, travel_pace, language } = await c.req.json()
+    if (!name || !password) {
+      return c.json({ error: 'Name and password are required' }, 400)
+    }
+    const hash = await bcrypt.hash(password, 10)
+    const result = await client.query(
+      `INSERT INTO users (name, email, password_hash, crowd_tolerance, interests, food_conditions, travel_pace, language)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [name, email || null, hash, crowd_tolerance, interests, food_conditions, travel_pace, language]
+    )
+    const user = result.rows[0]
+    console.log('New user ID:', result.rows[0].id);
+    return c.json({ user })
+  } catch (err) {
+    console.error('Signup error:', err);
+    return c.json({ error: 'Signup failed' }, 500)
   }
-  const hash = await bcrypt.hash(password, 10)
-  const result = await client.query(
-    `INSERT INTO users (name, email, password_hash, crowd_tolerance, interests, food_conditions, travel_pace, language)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-    [name, email || null, hash, crowd_tolerance, interests, food_conditions, travel_pace, language]
-  )
-  const user = result.rows[0]
-  return c.json({ user })
 })
 
 // ログイン
