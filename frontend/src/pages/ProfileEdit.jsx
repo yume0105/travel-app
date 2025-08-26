@@ -55,8 +55,22 @@ function ProfileEdit({ user, setUser }) {
         </label>
         <br />
         <label>
-          <b>混雑耐性</b><br />
-          <input type="number" value={crowdTolerance} onChange={e => setCrowdTolerance(Number(e.target.value))} min="1" max="5" />
+          <b>人混み耐性（1〜5）</b><br />
+          <span style={{ fontSize: 12, color: '#555' }}>混雑した場所が苦手な方は低めに</span><br />
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            {[1,2,3,4,5].map(num => (
+              <label key={num} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <input
+                  type="radio"
+                  name="crowdTolerance"
+                  value={num}
+                  checked={crowdTolerance === num}
+                  onChange={() => setCrowdTolerance(num)}
+                />
+                {num}
+              </label>
+            ))}
+          </div>
         </label>
         <br />
         <label>
