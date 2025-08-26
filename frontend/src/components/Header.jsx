@@ -28,7 +28,7 @@ export default function Header({ user, onLogout }) {
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
-              alignItems="center"
+              alignItems={isSmUp ? "center" : "flex-start"}
               sx={{
                 justifyContent: isSmUp ? "flex-end" : "flex-start",
                 textAlign: isSmUp ? "right" : "left",
