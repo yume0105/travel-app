@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Login from './pages/Login'
+import Reset from './pages/Reset'
+import ResetPassword from './pages/ResetPassword'
 import Index from './pages/Index'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
@@ -76,6 +78,8 @@ function App() {
           <Route path="/" element={<Index onLogin={handleLogin}/>} />
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
+          <Route path="/reset" element={<Reset />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard user={user} />} />
           <Route path="/profile/edit" element={<ProfileEdit user={user} setUser={setUser} />} />
           <Route path="/plan/new" element={<CreatePlan user={user} onSave={handleCreatePlan} />} />

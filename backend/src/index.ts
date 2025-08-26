@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt'
 import { v4 as uuidv4 } from 'uuid'
 import 'dotenv/config'
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import nodemailer from 'nodemailer'
 
 const app = new Hono()
 
@@ -15,7 +16,7 @@ app.use('*', cors({
   origin: '*' // ここでどのオリジンからもアクセス可能に
 }))
 
-// PostgreSQL クライアント
+// //PostgreSQL クライアント
 // const client = new Client({
 //   host: 'localhost',
 //   port: 5432,
@@ -220,14 +221,31 @@ app.post('/login', async (c) => {
 
 // パスワードリセット申請（仮実装）
 app.post('/reset-password', async (c) => {
-  const { email, newPassword } = await c.req.json()
-  const res = await client.query('SELECT * FROM users WHERE email=$1', [email])
-  if (res.rowCount === 0) {
-    return c.json({ error: 'Email not found' }, 404)
+  try {
+    const { token, newPassword } = await c.req.json()
+    console.log('reset-password called:', { token, newPassword })
+
+    // トークン検証
+    const res = await client.query(
+      'SELECT user_id FROM password_reset_tokens WHERE token=$1 AND expires_at > NOW()',
+      [token]
+    )
+    console.log('token query result:', res.rows)
+
+    if (res.rowCount === 0) {
+      console.error('Token not found or expired:', token)
+      return c.json({ error: '無効または期限切れのトークンです' }, 400)
+    }
+    const userId = res.rows[0].user_id
+    const hash = await bcrypt.hash(newPassword, 10)
+    await client.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, userId])
+    await client.query('DELETE FROM password_reset_tokens WHERE token=$1', [token])
+    console.log('Password reset successful for user:', userId)
+    return c.json({ message: 'パスワードを再設定しました' })
+  } catch (err) {
+    console.error('reset-password error:', err)
+    return c.json({ error: 'パスワード再設定処理でエラーが発生しました' }, 500)
   }
-  const hash = await bcrypt.hash(newPassword, 10)
-  await client.query('UPDATE users SET password_hash=$1 WHERE email=$2', [hash, email])
-  return c.json({ message: 'Password reset successful' })
 })
 
 // プラン作成（幹事）
@@ -550,6 +568,77 @@ app.get('/ai/plan-results', async (c) => {
   )
   // 存在しない場合も空配列を返す
   return c.json(res.rows)
+})
+
+// パスワードリセット申請
+app.post('/request-reset', async (c) => {
+  const { email } = await c.req.json()
+  const res = await client.query('SELECT * FROM users WHERE email=$1', [email])
+  if (res.rowCount === 0) {
+    return c.json({ error: 'Email not found' }, 404)
+  }
+  const user = res.rows[0]
+  const token = uuidv4()
+  // トークンをDBに保存（有効期限付き推奨）
+  await client.query(
+    'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL \'1 hour\')',
+    [user.id, token]
+  )
+  // メール送信
+  const resetUrl = `${process.env.VITE_FRONTEND_URL}/reset-password?token=${token}`
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
+  })
+  await transporter.sendMail({
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: 'パスワード再設定',
+    text: `以下のURLからパスワードを再設定してください: ${resetUrl}`
+  })
+  return c.json({ message: '再設定メールを送信しました' })
+})
+
+app.post('/reset-password', async (c) => {
+  try {
+    const { token, newPassword } = await c.req.json()
+    console.log('reset-password called:', { token, newPassword })
+
+    // トークン検証
+    const res = await client.query(
+      'SELECT user_id FROM password_reset_tokens WHERE token=$1 AND expires_at > NOW()',
+      [token]
+    )
+    console.log('token query result:', res.rows)
+
+    if (res.rowCount === 0) {
+      console.error('Token not found or expired:', token)
+      return c.json({ error: '無効または期限切れのトークンです' }, 400)
+    }
+    const userId = res.rows[0].user_id
+    const hash = await bcrypt.hash(newPassword, 10)
+    await client.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, userId])
+    await client.query('DELETE FROM password_reset_tokens WHERE token=$1', [token])
+    console.log('Password reset successful for user:', userId)
+    return c.json({ message: 'パスワードを再設定しました' })
+  } catch (err) {
+    console.error('reset-password error:', err)
+    return c.json({ error: 'パスワード再設定処理でエラーが発生しました' }, 500)
+  }
+})
+
+app.get('/reset-password/email', async (c) => {
+  const token = c.req.query('token')
+  if (!token) return c.json({ error: 'Token is required' }, 400)
+  const res = await client.query(
+    `SELECT u.email
+     FROM password_reset_tokens t
+     JOIN users u ON t.user_id = u.id
+     WHERE t.token = $1 AND t.expires_at > NOW()`,
+    [token]
+  )
+  if (res.rowCount === 0) return c.json({ error: '無効または期限切れのトークンです' }, 404)
+  return c.json({ email: res.rows[0].email })
 })
 
 const PORT = process.env.PORT || 3000
