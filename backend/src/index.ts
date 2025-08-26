@@ -16,7 +16,7 @@ app.use('*', cors({
   origin: '*' // ここでどのオリジンからもアクセス可能に
 }))
 
-// //PostgreSQL クライアント
+//PostgreSQL クライアント
 // const client = new Client({
 //   host: 'localhost',
 //   port: 5432,
